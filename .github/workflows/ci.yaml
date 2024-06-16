@@ -6,21 +6,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      keycloak:
-        image: quay.io/keycloak/keycloak:20.0.3
-        ports:
-          - 8080:8080
-        options: >-
-          --name keycloak_unoptimized
-          -e KEYCLOAK_ADMIN=admin
-          -e KEYCLOAK_ADMIN_PASSWORD=admin
-          -v /path/to/realm/data:/opt/keycloak/data/import
-          start-dev --import-realm
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Set up Docker
+        run: |
+          docker run -d --name keycloak_unoptimized -p 8080:8080 \
+            -e KEYCLOAK_ADMIN=admin \
+            -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+            -v /path/to/realm/data:/opt/keycloak/data/import \
+                quay.io/keycloak/keycloak:20.0.3 \
+                start-dev --import-realm
 
       - name: Make run-tests.sh executable
         run: chmod +x ./run-tests.sh
