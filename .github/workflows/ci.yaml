@@ -1,0 +1,40 @@
+name: CI with Keycloak
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      keycloak:
+        image: quay.io/keycloak/keycloak:20.0.3
+        ports:
+          - 8080:8080
+        options: >-
+          --name keycloak_unoptimized
+          -e KEYCLOAK_ADMIN=admin
+          -e KEYCLOAK_ADMIN_PASSWORD=admin
+          -v /path/to/realm/data:/opt/keycloak/data/import
+          start-dev --import-realm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Make run-tests.sh executable
+        run: chmod +x ./run-tests.sh
+
+      - name: Wait for Keycloak to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/ > /dev/null; then
+              echo "Keycloak is up!"
+              break
+            fi
+            echo "Waiting for Keycloak to start..."
+            sleep 10
+          done
+
+      - name: Run tests
+        run: ./run-tests.sh
